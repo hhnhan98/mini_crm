@@ -86,10 +86,12 @@ model Project {
   deletedAt   DateTime?
 
   // Relations
-  creator        Account         @relation("ProjectCreator", fields: [createdBy], references: [id])
-  members        ProjectMember[]
-  leads          Lead[]
-  tasks          Task[]
+  creator     Account         @relation("ProjectCreator", fields: [createdBy], references: [id])
+  members     ProjectMember[]
+  leads       Lead[]
+  tasks       Task[]
+
+  @@index([createdBy])
 }
 
 //////////////////////////////////////////////////
@@ -105,6 +107,8 @@ model ProjectMember {
   account    Account     @relation(fields: [accountId], references: [id])
 
   @@unique([projectId, accountId])
+  @@index([projectId])
+  @@index([accountId])
 }
 
 //////////////////////////////////////////////////
@@ -114,7 +118,7 @@ model Lead {
   name      String
   email     String?
   phone     String?
-  status    LeadStatus
+  status    LeadStatus  @default(NEW)
 
   projectId String
   ownerId   String
@@ -126,6 +130,9 @@ model Lead {
   // Relations
   project   Project     @relation(fields: [projectId], references: [id])
   owner     Account     @relation("LeadOwner", fields: [ownerId], references: [id])
+
+  @@index([projectId])
+  @@index([ownerId])
 }
 
 //////////////////////////////////////////////////
@@ -136,10 +143,10 @@ model Task {
   description String?
 
   projectId   String
-  assigneeId  String
+  assigneeId  String?   // FIX: optional
   reporterId  String
 
-  status      TaskStatus
+  status      TaskStatus @default(TODO)
   priority    Priority?
 
   dueDate     DateTime?
@@ -150,10 +157,13 @@ model Task {
 
   // Relations
   project     Project     @relation(fields: [projectId], references: [id])
-  assignee    Account     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  assignee    Account?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
   reporter    Account     @relation("TaskReporter", fields: [reporterId], references: [id])
 
   comments    Comment[]
+
+  @@index([projectId])
+  @@index([assigneeId])
 }
 
 //////////////////////////////////////////////////
@@ -170,4 +180,7 @@ model Comment {
   // Relations
   task       Task      @relation(fields: [taskId], references: [id])
   account    Account   @relation(fields: [accountId], references: [id])
+
+  @@index([taskId])
+  @@index([accountId])
 }
