@@ -1,0 +1,14 @@
+$ node src/test.js
+file:///B:/CRM/backend/src/test.js:1
+const { PrismaClient } = require("@prisma/client");
+                         ^
+
+ReferenceError: require is not defined in ES module scope, you can use import instead
+This file is being treated as an ES module because it has a '.js' file extension and 'B:\CRM\backend\package.json' contains "type": "module". To treat it as a
+ CommonJS script, rename it to use the '.cjs' file extension.
+    at file:///B:/CRM/backend/src/test.js:1:26
+    at ModuleJob.run (node:internal/modules/esm/module_job:329:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.17.1

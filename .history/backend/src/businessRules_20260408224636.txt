@@ -1,0 +1,10 @@
+### Account
+- Một account có role: ADMIN | TEAMLEAD | MEMBER
+- ADMIN có thể tạo project
+- TEAMLEAD quản lý member trong project
+...
+
+### Project
+- Một project có nhiều member
+- Member thuộc project qua bảng trung gian
+...

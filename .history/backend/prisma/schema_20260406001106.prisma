@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+////////////////////
+/// ENUM
+////////////////////
+
+enum AccountRole {
+  ADMIN
+  TEAMLEAD
+  MEMBER
+}
+
+enum ProjectMemberRole {
+  OWNER
+  MEMBER
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum StatusType {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum AttachmentRefType {
+  TASK
+  PROJECT
+}
+
+////////////////////
+/// MODELS
+////////////////////
+
+model Account {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      AccountRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+
+  // relations
+  createdProjects Project[] @relation("ProjectCreator")
+  projectMembers  ProjectMember[]
+  reportedTasks   Task[] @relation("TaskReporter")
+  assignedTasks   Task[] @relation("TaskAssignee")
+  comments        Comment[]
+  timelogs        Timelog[]
+  attachments     Attachment[]
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdBy   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+
+  // relations
+  creator        Account @relation("ProjectCreator", fields: [createdBy], references: [id])
+  members        ProjectMember[]
+  tasks          Task[]
+}
+
+model ProjectMember {
+  id        Int @id @default(autoincrement())
+  projectId Int
+  accountId Int
+  role      ProjectMemberRole
+
+  // relations
+  project Project @relation(fields: [projectId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@unique([projectId, accountId]) // tránh duplicate member
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  projectId   Int
+  statusId    Int
+  reporterId  Int
+  assigneeId  Int?
+  priority    TaskPriority?
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+
+  // relations
+  project   Project @relation(fields: [projectId], references: [id])
+  status    Status  @relation(fields: [statusId], references: [id])
+
+  reporter  Account @relation("TaskReporter", fields: [reporterId], references: [id])
+  assignee  Account? @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  comments  Comment[]
+  timelogs  Timelog[]
+}
+
+model Status {
+  id    Int        @id @default(autoincrement())
+  name  String
+  type  StatusType
+  order Int
+
+  tasks Task[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  accountId Int
+  content   String
+  createdAt DateTime @default(now())
+
+  // relations
+  task    Task    @relation(fields: [taskId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+}
+
+model Timelog {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  accountId Int
+  timeSpent Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  // relations
+  task    Task    @relation(fields: [taskId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+}
+
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  url        String
+  refType    AttachmentRefType
+  refId      Int
+  uploadedBy Int
+  createdAt  DateTime @default(now())
+
+  // relations
+  uploader Account @relation(fields: [uploadedBy], references: [id])
+}
