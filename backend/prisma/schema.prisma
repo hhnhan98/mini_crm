@@ -55,7 +55,7 @@ model Account {
   email     String         @unique
   password  String
   name      String
-  role      SystemRole
+  role      SystemRole     @default(USER)
   status    AccountStatus  @default(ACTIVE)
 
   createdAt DateTime       @default(now())
@@ -103,8 +103,8 @@ model ProjectMember {
   role       ProjectRole
 
   // Relations
-  project    Project     @relation(fields: [projectId], references: [id])
-  account    Account     @relation(fields: [accountId], references: [id])
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  account    Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, accountId])
   @@index([projectId])
@@ -128,8 +128,8 @@ model Lead {
   deletedAt DateTime?
 
   // Relations
-  project   Project     @relation(fields: [projectId], references: [id])
-  owner     Account     @relation("LeadOwner", fields: [ownerId], references: [id])
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner     Account     @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
   @@index([ownerId])
@@ -156,9 +156,9 @@ model Task {
   deletedAt   DateTime?
 
   // Relations
-  project     Project     @relation(fields: [projectId], references: [id])
-  assignee    Account?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  reporter    Account     @relation("TaskReporter", fields: [reporterId], references: [id])
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee Account? @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter    Account     @relation("TaskReporter", fields: [reporterId], references: [id], onDelete: Cascade)
 
   comments    Comment[]
 
@@ -178,9 +178,9 @@ model Comment {
   createdAt  DateTime  @default(now())
 
   // Relations
-  task       Task      @relation(fields: [taskId], references: [id])
-  account    Account   @relation(fields: [accountId], references: [id])
+  task       Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  account    Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([taskId])
-  @@index([accountId])
+  @@index([accountId])  
 }

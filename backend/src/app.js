@@ -1,9 +1,11 @@
 import express from "express";
+import authRoutes from "./modules/auth/auth.route.js";
 
 const app = express();
 
-app.get("/", (req, res) => {
-  res.send("OK");
-});
+app.use(express.json());
+
+// ROUTES
+app.use("/auth", authRoutes);
 
 export default app;
