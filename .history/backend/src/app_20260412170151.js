@@ -15,7 +15,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ROUTES
+// routes
 app.use("/auth", authRoutes);
 app.use("/projects", projectRoutes);
 

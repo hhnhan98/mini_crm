@@ -15,9 +15,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ROUTES
+// routes
 app.use("/auth", authRoutes);
-app.use("/projects", projectRoutes);
 
 // 404 handler
 app.use((req, res) => {

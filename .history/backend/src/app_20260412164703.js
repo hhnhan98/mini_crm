@@ -1,6 +1,5 @@
 import express from "express";
 import authRoutes from "./modules/auth/auth.route.js";
-import projectRoutes from "./modules/project/project.route.js";
 
 const app = express();
 
@@ -15,9 +14,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-// ROUTES
+// routes
 app.use("/auth", authRoutes);
-app.use("/projects", projectRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////
+
+enum SystemRole {
+  ADMIN
+  USER
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ProjectRole {
+  TEAMLEAD
+  MEMBER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  WON
+  LOST
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+//////////////////////////////////////////////////
+// MODELS
+//////////////////////////////////////////////////
+
+model Account {
+  id        String         @id @default(uuid())
+  email     String         @unique
+  password  String
+  name      String
+  role      SystemRole     @default(USER)
+  status    AccountStatus  @default(ACTIVE)
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  projectsCreated Project[]        @relation("ProjectCreator")
+  projectMembers  ProjectMember[]
+
+  leadsOwned      Lead[]           @relation("LeadOwner")
+  tasksAssigned   Task[]           @relation("TaskAssignee")
+  tasksReported   Task[]           @relation("TaskReporter")
+
+  comments        Comment[]
+}
+
+//////////////////////////////////////////////////
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  creator     Account         @relation("ProjectCreator", fields: [createdBy], references: [id])
+  members     ProjectMember[]
+  leads       Lead[]
+  tasks       Task[]
+
+  @@index([createdBy])
+}
+
+//////////////////////////////////////////////////
+
+model ProjectMember {
+  id         String      @id @default(uuid())
+  projectId  String
+  accountId  String
+  role       ProjectRole
+
+  // Relations
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  account    Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, accountId])
+  @@index([projectId])
+  @@index([accountId])
+}
+
+//////////////////////////////////////////////////
+
+model Lead {
+  id        String      @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  status    LeadStatus  @default(NEW)
+
+  projectId String
+  ownerId   String
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner     Account     @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([ownerId])
+}
+
+//////////////////////////////////////////////////
+
+model Task {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+
+  projectId   String
+  assigneeId  String?   // FIX: optional
+  reporterId  String
+
+  status      TaskStatus @default(TODO)
+  priority    Priority?
+
+  dueDate     DateTime?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    Account?    @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  reporter    Account     @relation("TaskReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  comments    Comment[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+}
+
+//////////////////////////////////////////////////
+
+model Comment {
+  id         String    @id @default(uuid())
+  content    String
+
+  taskId     String
+  accountId  String
+
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  task       Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  account    Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([accountId])
+}

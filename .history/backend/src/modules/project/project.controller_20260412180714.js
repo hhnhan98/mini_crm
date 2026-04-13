@@ -1,5 +1,5 @@
 import * as projectService from "./project.service.js";
-import prisma from "../../config/prisma.js";
+import { prisma } from "../../config/prisma.js";
 
 export const createProject = async (req, res) => {
   try {

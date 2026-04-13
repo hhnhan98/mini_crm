@@ -14,7 +14,6 @@ router.get(
   "/:projectId",
   verifyToken,
   checkProjectAccess,
-  // authorizeRole("ADMIN", "MEMBER"), // Nếu muốn phân quyền chi tiết hơn, có thể sử dụng middleware này
   projectController.getDetail
 );
 
