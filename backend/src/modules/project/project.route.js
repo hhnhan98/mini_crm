@@ -18,4 +18,11 @@ router.get(
   projectController.getDetail
 );
 
+// GET MEMBER OF PROJECT
+router.get(
+  "/:projectId/members",
+  verifyToken,
+  checkProjectAccess,
+  projectMemberController.getMembers
+);
 export default router;

@@ -1,71 +1,49 @@
 import * as projectService from "./project.service.js";
-import prisma from "../../config/prisma.js";
+
+// CREATE PROJECT
 
 export const createProject = async (req, res) => {
   try {
     const { name, description } = req.body;
+    const userId = req.user.id;
 
-    if (!name) {
+    // Validate input
+    if (!name || name.trim() === "") {
       return res.status(400).json({
         message: "Project name is required",
       });
     }
 
     const project = await projectService.createProject({
-      name,
+      name: name.trim(),
       description,
-      userId: req.user.id,
+      userId,
     });
 
-    res.status(201).json({
-      message: "Project created",
+    return res.status(201).json({
+      message: "Project created successfully",
       data: project,
     });
   } catch (error) {
-    res.status(400).json({
-      message: error.message,
+    return res.status(400).json({
+      message: error.message || "Create project failed",
     });
   }
 };
 
-export const getDetail = async (req, res) => {
+// GET PROJECT DETAIL
+
+export const getProjectDetail = async (req, res) => {
   try {
     const { projectId } = req.params;
 
-    const project = await prisma.project.findUnique({
-      where: {
-        id: projectId,
-      },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-        members: {
-          include: {
-            account: {
-              select: {
-                id: true,
-                email: true,
-                name: true,
-              },
-            },
-          },
-        },
-        tasks: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            priority: true,
-            dueDate: true,
-          },
-        },
-      },
-    });
+    if (!projectId) {
+      return res.status(400).json({
+        message: "Project ID is required",
+      });
+    }
+
+    const project = await projectService.getProjectDetail(projectId);
 
     if (!project) {
       return res.status(404).json({
@@ -73,13 +51,37 @@ export const getDetail = async (req, res) => {
       });
     }
 
-    return res.json({
-      message: "Project detail",
+    return res.status(200).json({
+      message: "Get project detail successfully",
       data: project,
     });
   } catch (error) {
     return res.status(500).json({
-      message: error.message,
+      message: error.message || "Internal server error",
+    });
+  }
+};
+
+// GET MEMBER OF PROJECT
+export const getMembers = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    if (!projectId) {
+      return res.status(400).json({
+        message: "Project ID is required",
+      });
+    }
+
+    const members = await projectMemberService.getMembers(projectId);
+
+    return res.status(200).json({
+      message: "Get project members successfully",
+      data: members,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || "Internal server error",
     });
   }
 };

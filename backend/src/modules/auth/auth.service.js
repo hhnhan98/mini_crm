@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { SystemRole } from "@prisma/client";
 
+// Register function
 export const register = async ({ email, password, name }) => {
   const existingUser = await prisma.account.findUnique({
     where: { email },
@@ -22,7 +23,7 @@ export const register = async ({ email, password, name }) => {
       email,
       password: hashedPassword,
       name,
-      role: SystemRole.USER, // ✅ FIX
+      role: SystemRole.USER,
     },
   });
 
@@ -31,7 +32,7 @@ export const register = async ({ email, password, name }) => {
   return userWithoutPassword;
 };
 
-// ✅ LOGIN SERVICE (đúng)
+// Login function
 export const login = async ({ email, password }) => {
   const user = await prisma.account.findUnique({
     where: { email },
