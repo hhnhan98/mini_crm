@@ -29,19 +29,22 @@ export const login = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({
+        success: false,
         message: "Missing email or password",
       });
     }
 
     const result = await authService.login({ email, password });
 
-    res.json({
+    return res.status(200).json({
+      success: true,
       message: "Login success",
       data: result,
     });
   } catch (error) {
-    res.status(400).json({
-      message: error.message,
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Login failed",
     });
   }
 };

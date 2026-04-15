@@ -1,8 +1,7 @@
 import express from "express";
 import * as projectController from "./project.controller.js";
 import { verifyToken } from "../../middlewares/verifyToken.js";
-import { checkProjectAccess } from "../../middlewares/checkProjectAccess.js";
-import { authorizeRole } from "../../middlewares/authorizeRole.js";
+import { checkProjectRole } from "../../middlewares/checkProjectRole.js";
 
 const router = express.Router();
 
@@ -13,16 +12,16 @@ router.post("/", verifyToken, projectController.createProject);
 router.get(
   "/:projectId",
   verifyToken,
-  checkProjectAccess,
-  // authorizeRole("ADMIN", "MEMBER"), // Nếu muốn phân quyền chi tiết hơn, có thể sử dụng middleware này
-  projectController.getDetail
+  checkProjectRole(["OWNER", "MEMBER"]),
+  projectController.getProjectDetail
 );
 
-// GET MEMBER OF PROJECT
+// GET MEMBERS
 router.get(
   "/:projectId/members",
   verifyToken,
-  checkProjectAccess,
-  projectMemberController.getMembers
+  checkProjectRole(["OWNER"]),
+  projectController.getMembers
 );
+
 export default router;

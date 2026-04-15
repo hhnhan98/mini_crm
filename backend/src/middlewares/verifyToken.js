@@ -24,7 +24,10 @@ export const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // 4. Gắn user vào request
-    req.user = decoded;
+    req.user = {
+      id: decoded.userId,
+      role: decoded.role,
+    };
 
     next();
   } catch (error) {

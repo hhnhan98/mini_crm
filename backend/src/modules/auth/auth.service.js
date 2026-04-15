@@ -20,7 +20,7 @@ export const register = async ({ email, password, name }) => {
 
   const user = await prisma.account.create({
     data: {
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
       name,
       role: SystemRole.USER,
@@ -35,26 +35,21 @@ export const register = async ({ email, password, name }) => {
 // Login function
 export const login = async ({ email, password }) => {
   const user = await prisma.account.findUnique({
-    where: { email },
+    where: { email: email.toLowerCase() },
   });
 
-  if (!user) {
-    throw new Error("User not found");
-  }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-
-  if (!isMatch) {
-    throw new Error("Invalid password");
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    throw new Error("Invalid email or password");
   }
 
   const token = jwt.sign(
     {
       id: user.id,
+      email: user.email,
       role: user.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" }
+    { expiresIn: process.env.JWT_EXPIRES || "1d" }
   );
 
   return {

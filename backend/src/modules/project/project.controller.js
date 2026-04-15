@@ -73,7 +73,7 @@ export const getMembers = async (req, res) => {
       });
     }
 
-    const members = await projectMemberService.getMembers(projectId);
+    const members = await projectService.getMembers(projectId);
 
     return res.status(200).json({
       message: "Get project members successfully",
