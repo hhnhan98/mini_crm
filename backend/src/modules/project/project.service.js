@@ -2,8 +2,8 @@ import prisma from "../../config/prisma.js";
 
 // CREATE PROJECT
 export const createProject = async ({ name, description, userId }) => {
-  const project = await prisma.$transaction(async (tx) => {
-    const newProject = await tx.project.create({
+  return prisma.$transaction(async (tx) => {
+    const project = await tx.project.create({
       data: {
         name,
         description,
@@ -13,16 +13,36 @@ export const createProject = async ({ name, description, userId }) => {
 
     await tx.projectMember.create({
       data: {
-        projectId: newProject.id,
+        projectId: project.id,
         accountId: userId,
         role: "OWNER",
       },
     });
 
-    return newProject;
+    return project;
   });
+};
 
-  return project;
+// GET MY PROJECTS
+export const getMyProjects = async (userId) => {
+  return prisma.projectMember.findMany({
+    where: {
+      accountId: userId,
+    },
+    include: {
+      project: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 };
 
 // GET PROJECT DETAIL
@@ -39,17 +59,6 @@ export const getProjectDetail = async (projectId) => {
           name: true,
         },
       },
-      members: {
-        include: {
-          account: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-            },
-          },
-        },
-      },
       tasks: {
         select: {
           id: true,
@@ -58,17 +67,22 @@ export const getProjectDetail = async (projectId) => {
           priority: true,
           dueDate: true,
         },
+        take: 10, // tránh nặng
       },
     },
   });
 };
 
-// GET MEMBER OF PROJECT
-export const getMembers = async (projectId) => {
+// GET MEMBERS (pagination)
+export const getMembers = async (projectId, { page, limit }) => {
+  const skip = (page - 1) * limit;
+
   return prisma.projectMember.findMany({
     where: {
       projectId,
     },
+    skip,
+    take: limit,
     orderBy: {
       createdAt: "asc",
     },
@@ -81,6 +95,38 @@ export const getMembers = async (projectId) => {
           status: true,
         },
       },
+    },
+  });
+};
+
+// ADD MEMBER
+export const addMember = async ({ projectId, accountId, role }) => {
+  // check user tồn tại
+  const user = await prisma.account.findUnique({
+    where: { id: accountId },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // check đã là member chưa
+  const existing = await prisma.projectMember.findFirst({
+    where: {
+      projectId,
+      accountId,
+    },
+  });
+
+  if (existing) {
+    throw new Error("User already in project");
+  }
+
+  return prisma.projectMember.create({
+    data: {
+      projectId,
+      accountId,
+      role,
     },
   });
 };

@@ -12,6 +12,7 @@ router.post("/", verifyToken, projectController.createProject);
 router.get(
   "/:projectId",
   verifyToken,
+  checkProjectAccess,
   checkProjectRole(["OWNER", "MEMBER"]),
   projectController.getProjectDetail
 );
@@ -20,6 +21,7 @@ router.get(
 router.get(
   "/:projectId/members",
   verifyToken,
+  checkProjectAccess,
   checkProjectRole(["OWNER"]),
   projectController.getMembers
 );

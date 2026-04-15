@@ -3,6 +3,11 @@ import prisma from "../config/prisma.js";
 // Kiểm tra quyền truy cập vào dự án
 export const checkProjectAccess = async (req, res, next) => {
   try {
+    // Admin Bypass
+    if (req.user.role === "ADMIN") {
+      return next();
+    }
+
     const userId = req.user.id;
     const projectId = req.params.projectId;
 

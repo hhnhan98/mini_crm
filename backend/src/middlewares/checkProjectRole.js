@@ -1,6 +1,11 @@
 export const checkProjectRole = (allowedRoles = []) => {
   return (req, res, next) => {
     try {
+      // Admin Bypass
+      if (req.user.role === "ADMIN") {
+        return next();
+      }
+
       const member = req.projectMember;
 
       if (!member) {
