@@ -12,7 +12,7 @@ export const verifyToken = (req, res, next) => {
     }
 
     // 2. Format: "Bearer <token>"
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
     if (!token) {
       return res.status(401).json({
@@ -25,7 +25,7 @@ export const verifyToken = (req, res, next) => {
 
     // 4. Gắn user vào request
     req.user = {
-      id: decoded.userId,
+      id: decoded.id,
       role: decoded.role,
     };
 

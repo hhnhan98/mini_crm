@@ -1,18 +1,7 @@
-import prisma from "../config/prisma.js";
-
 export const checkProjectRole = (allowedRoles = []) => {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     try {
-      const userId = req.user.id;
-      const { projectId } = req.params;
-
-      // TODO: query DB kiểm tra role
-      const member = await prisma.projectMember.findFirst({
-        where: {
-          projectId,
-          accountId: userId,
-        },
-      });
+      const member = req.projectMember;
 
       if (!member) {
         return res.status(403).json({
@@ -20,7 +9,7 @@ export const checkProjectRole = (allowedRoles = []) => {
         });
       }
 
-      if (allowedRoles.length > 0 && !allowedRoles.includes(member.role)) {
+      if (allowedRoles.length && !allowedRoles.includes(member.role)) {
         return res.status(403).json({
           message: "Permission denied",
         });
