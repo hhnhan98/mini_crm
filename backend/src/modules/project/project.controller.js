@@ -1,19 +1,29 @@
 import * as projectService from "./project.service.js";
 
+// helper: parse pagination
+const parsePagination = (page, limit) => {
+  const pageNumber = Math.max(1, Number(page) || 1);
+  const limitNumber = Math.min(50, Math.max(1, Number(limit) || 10));
+
+  return { page: pageNumber, limit: limitNumber };
+};
+
 // CREATE PROJECT
 export const createProject = async (req, res) => {
   try {
     const { name, description } = req.body;
     const userId = req.user.id;
 
-    if (!name || name.trim() === "") {
+    const cleanName = name?.trim();
+
+    if (!cleanName) {
       return res.status(400).json({
         message: "Project name is required",
       });
     }
 
     const project = await projectService.createProject({
-      name: name.trim(),
+      name: cleanName,
       description: description?.trim() || null,
       userId,
     });
@@ -23,8 +33,8 @@ export const createProject = async (req, res) => {
       data: project,
     });
   } catch (error) {
-    return res.status(400).json({
-      message: error.message || "Create project failed",
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 };
@@ -42,7 +52,7 @@ export const getMyProjects = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      message: error.message || "Internal server error",
+      message: "Internal server error",
     });
   }
 };
@@ -51,6 +61,12 @@ export const getMyProjects = async (req, res) => {
 export const getProjectDetail = async (req, res) => {
   try {
     const { projectId } = req.params;
+
+    if (!projectId) {
+      return res.status(400).json({
+        message: "projectId is required",
+      });
+    }
 
     const project = await projectService.getProjectDetail(projectId);
 
@@ -66,20 +82,31 @@ export const getProjectDetail = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      message: error.message || "Internal server error",
+      message: "Internal server error",
     });
   }
 };
 
-// GET MEMBERS (pagination)
+// GET MEMBERS
 export const getMembers = async (req, res) => {
   try {
     const { projectId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { page, limit } = req.query;
+
+    if (!projectId) {
+      return res.status(400).json({
+        message: "projectId is required",
+      });
+    }
+
+    const { page: pageNumber, limit: limitNumber } = parsePagination(
+      page,
+      limit
+    );
 
     const members = await projectService.getMembers(projectId, {
-      page: Number(page),
-      limit: Number(limit),
+      page: pageNumber,
+      limit: limitNumber,
     });
 
     return res.status(200).json({
@@ -88,7 +115,7 @@ export const getMembers = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      message: error.message || "Internal server error",
+      message: "Internal server error",
     });
   }
 };
@@ -99,16 +126,31 @@ export const addMember = async (req, res) => {
     const { projectId } = req.params;
     const { accountId, role } = req.body;
 
+    if (!projectId) {
+      return res.status(400).json({
+        message: "projectId is required",
+      });
+    }
+
     if (!accountId || !role) {
       return res.status(400).json({
         message: "accountId and role are required",
       });
     }
 
+    const allowedRoles = ["OWNER", "MEMBER"];
+    const cleanRole = role.trim().toUpperCase();
+
+    if (!allowedRoles.includes(cleanRole)) {
+      return res.status(400).json({
+        message: "Invalid role",
+      });
+    }
+
     const member = await projectService.addMember({
       projectId,
       accountId,
-      role,
+      role: cleanRole,
     });
 
     return res.status(201).json({
@@ -116,8 +158,14 @@ export const addMember = async (req, res) => {
       data: member,
     });
   } catch (error) {
-    return res.status(400).json({
-      message: error.message || "Add member failed",
+    if (error.message === "User already in project") {
+      return res.status(409).json({
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 };
