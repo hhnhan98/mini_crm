@@ -7,7 +7,11 @@ export const createProject = async ({ name, description, userId }) => {
       data: {
         name,
         description,
-        createdBy: userId,
+        creator: {
+          connect: {
+            id: userId,
+          },
+        },
       },
     });
 

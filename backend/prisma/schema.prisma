@@ -85,7 +85,7 @@ model Project {
   deletedAt   DateTime?
 
   // Relations
-  creator     Account         @relation("ProjectCreator", fields: [createdById], references: [id])
+  createdBy   Account @relation("ProjectCreator", fields: [createdById], references: [id])
   members     ProjectMember[]
   leads       Lead[]
   tasks       Task[]

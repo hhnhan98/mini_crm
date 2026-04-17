@@ -2,6 +2,7 @@ import express from "express";
 import * as projectController from "./project.controller.js";
 import { verifyToken } from "../../middlewares/verifyToken.js";
 import { checkProjectRole } from "../../middlewares/checkProjectRole.js";
+import { checkProjectAccess } from "../../middlewares/checkProjectAccess.js";
 
 const router = express.Router();
 

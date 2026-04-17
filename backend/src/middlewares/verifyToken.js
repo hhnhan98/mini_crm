@@ -12,9 +12,9 @@ export const verifyToken = (req, res, next) => {
     }
 
     // 2. Format: "Bearer <token>"
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const [scheme, token] = authHeader.split(" ");
 
-    if (!token) {
+    if (scheme !== "Bearer" || !token) {
       return res.status(401).json({
         message: "Invalid token format",
       });
@@ -26,13 +26,26 @@ export const verifyToken = (req, res, next) => {
     // 4. Gắn user vào request
     req.user = {
       id: decoded.id,
+      email: decoded.email,
       role: decoded.role,
     };
 
     next();
   } catch (error) {
-    return res.status(401).json({
-      message: "Unauthorized - Invalid token",
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Token expired",
+      });
+    }
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        message: "Invalid token",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 };
