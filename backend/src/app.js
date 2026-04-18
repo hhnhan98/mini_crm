@@ -1,6 +1,7 @@
 import express from "express";
 import authRoutes from "./modules/auth/auth.route.js";
 import projectRoutes from "./modules/project/project.route.js";
+import taskRoutes from "./modules/task/task.route.js";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get("/health", (req, res) => {
 // ROUTES
 app.use("/auth", authRoutes);
 app.use("/projects", projectRoutes);
+app.use("/tasks", taskRoutes);
 
 // 404 handler
 app.use((req, res) => {
