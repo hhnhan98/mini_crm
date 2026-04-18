@@ -68,7 +68,10 @@ export const getProjectDetail = async (req, res) => {
       });
     }
 
-    const project = await projectService.getProjectDetail(projectId);
+    const project = await projectService.getProjectDetail(
+      projectId,
+      req.user.id
+    );
 
     if (!project) {
       return res.status(404).json({
@@ -104,10 +107,14 @@ export const getMembers = async (req, res) => {
       limit
     );
 
-    const members = await projectService.getMembers(projectId, {
-      page: pageNumber,
-      limit: limitNumber,
-    });
+    const members = await projectService.getMembers(
+      projectId,
+      {
+        page: pageNumber,
+        limit: limitNumber,
+      },
+      req.user.id
+    );
 
     return res.status(200).json({
       message: "Get project members successfully",
@@ -138,9 +145,6 @@ export const addMember = async (req, res) => {
       });
     }
 
-    const allowedRoles = ["OWNER", "MEMBER"];
-    const cleanRole = role.trim().toUpperCase();
-
     if (!allowedRoles.includes(cleanRole)) {
       return res.status(400).json({
         message: "Invalid role",
@@ -150,7 +154,8 @@ export const addMember = async (req, res) => {
     const member = await projectService.addMember({
       projectId,
       accountId,
-      role: cleanRole,
+      role,
+      currentUser: req.user,
     });
 
     return res.status(201).json({
