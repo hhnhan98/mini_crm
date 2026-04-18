@@ -1,9 +1,7 @@
 import prisma from "../../config/prisma.js";
 import { AppError } from "../../utils/AppError.js";
 
-/**
- * Get project member role
- */
+// Get project member role
 export const getProjectMember = async (projectId, userId) => {
   const member = await prisma.projectMember.findFirst({
     where: {
@@ -19,9 +17,7 @@ export const getProjectMember = async (projectId, userId) => {
   return member;
 };
 
-/**
- * Check if user can update task
- */
+// Check if user can update task
 export const canUpdateTask = (memberRole, task, userId) => {
   // OWNER / MANAGER full quyền
   if (memberRole === "OWNER" || memberRole === "MANAGER") return true;
@@ -32,27 +28,21 @@ export const canUpdateTask = (memberRole, task, userId) => {
   throw new AppError("No permission to update task", 403);
 };
 
-/**
- * Check if user can delete task
- */
+// Check if user can delete task
 export const canDeleteTask = (memberRole) => {
   if (memberRole === "OWNER" || memberRole === "MANAGER") return true;
 
   throw new AppError("No permission to delete task", 403);
 };
 
-/**
- * Check if user can assign task
- */
+// Check if user can assign task
 export const canAssignTask = (memberRole) => {
   if (memberRole === "OWNER" || memberRole === "MANAGER") return true;
 
   throw new AppError("No permission to assign task", 403);
 };
 
-/**
- * Validate project membership (shortcut)
- */
+// Validate project membership (shortcut)
 export const ensureProjectMember = async (projectId, userId) => {
   return await getProjectMember(projectId, userId);
 };

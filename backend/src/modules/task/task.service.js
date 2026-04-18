@@ -7,15 +7,20 @@ import {
   canDeleteTask,
 } from "./task.permission.js";
 
-/* =========================
-   CONSTANTS
-========================= */
+// CONSTANTS
 const VALID_PRIORITY = ["LOW", "MEDIUM", "HIGH"];
 const VALID_STATUS = ["TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"];
+const STATUS_TRANSITIONS = {
+  TODO: ["IN_PROGRESS"],
+  IN_PROGRESS: ["IN_REVIEW"],
+  IN_REVIEW: ["DONE"],
+  DONE: [],
+};
+const canTransition = (currentStatus, nextStatus) => {
+  return STATUS_TRANSITIONS[currentStatus]?.includes(nextStatus);
+};
 
-/* =========================
-   CREATE TASK
-========================= */
+// CREATE TASK
 export const createTask = async (userId, payload) => {
   const {
     title = "",
@@ -75,9 +80,7 @@ export const createTask = async (userId, payload) => {
   });
 };
 
-/* =========================
-   GET TASKS BY PROJECT
-========================= */
+// GET TASKS BY PROJECT
 export const getTasksByProject = async (query, userId) => {
   const { projectId, status, search, page = 1, limit = 10 } = query;
 
@@ -85,7 +88,7 @@ export const getTasksByProject = async (query, userId) => {
     throw new AppError("projectId is required", 400);
   }
 
-  // 🔐 SECURITY FIX: check access
+  // Check access
   await ensureProjectMember(projectId, userId);
 
   const safePage = Math.max(Number(page) || 1, 1);
@@ -124,9 +127,7 @@ export const getTasksByProject = async (query, userId) => {
   };
 };
 
-/* =========================
-   UPDATE TASK
-========================= */
+// UPDATE TASK
 export const updateTask = async (taskId, userId, payload) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
@@ -143,20 +144,31 @@ export const updateTask = async (taskId, userId, payload) => {
   // get member + role
   const member = await ensureProjectMember(task.projectId, userId);
 
-  // 🔐 permission check
+  // permission check
   canUpdateTask(member.role, task, userId);
 
-  // validate status
-  if (payload.status && !VALID_STATUS.includes(payload.status)) {
-    throw new AppError("Invalid status", 400);
+  // ===== VALIDATION =====
+
+  // status (FIX workflow)
+  if (payload.status) {
+    if (!VALID_STATUS.includes(payload.status)) {
+      throw new AppError("Invalid status", 400);
+    }
+
+    // tránh update cùng trạng thái
+    if (payload.status === task.status) {
+      delete payload.status;
+    } else if (!canTransition(task.status, payload.status)) {
+      throw new AppError("Invalid status transition", 400);
+    }
   }
 
-  // validate priority
+  // priority
   if (payload.priority && !VALID_PRIORITY.includes(payload.priority)) {
     throw new AppError("Invalid priority", 400);
   }
 
-  // validate assignee
+  // assignee
   if (payload.assigneeId !== undefined) {
     canAssignTask(member.role);
 
@@ -174,12 +186,13 @@ export const updateTask = async (taskId, userId, payload) => {
     }
   }
 
-  // 🔥 SECURITY FIX: whitelist fields (NO SPREAD)
+  // ===== BUILD DATA (sau khi validate xong) =====
+
   const data = {
     title: payload.title?.trim(),
     description: payload.description?.trim() || null,
-    status: payload.status,
     priority: payload.priority,
+    status: payload.status,
     assigneeId:
       payload.assigneeId !== undefined ? payload.assigneeId : undefined,
   };
@@ -194,9 +207,7 @@ export const updateTask = async (taskId, userId, payload) => {
   });
 };
 
-/* =========================
-   DELETE TASK
-========================= */
+// DELETE TASK (SOFT DELETE)
 export const deleteTask = async (taskId, userId) => {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
@@ -212,13 +223,67 @@ export const deleteTask = async (taskId, userId) => {
 
   const member = await ensureProjectMember(task.projectId, userId);
 
-  // 🔐 permission check
+  // permission check
   canDeleteTask(member.role);
 
   return prisma.task.update({
     where: { id: taskId },
     data: {
       deletedAt: new Date(),
+    },
+  });
+};
+
+// UPDATE TASK STATUS
+export const updateTaskStatus = async ({ taskId, newStatus, currentUser }) => {
+  // 1. get task
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+  });
+
+  if (!task) {
+    throw new AppError("Task not found", 404);
+  }
+
+  if (task.deletedAt) {
+    throw new AppError("Task already deleted", 400);
+  }
+
+  // 2. validate status
+  if (!VALID_STATUS.includes(newStatus)) {
+    throw new AppError("Invalid status", 400);
+  }
+
+  // 3. tránh update cùng trạng thái (optional nhưng nên có)
+  if (task.status === newStatus) {
+    return task;
+  }
+
+  // 4. get member
+  const member = await ensureProjectMember(task.projectId, currentUser.id);
+
+  // 5. check DONE locked
+  if (task.status === "DONE") {
+    throw new AppError("Task already completed", 400);
+  }
+
+  // 6. check transition
+  if (!canTransition(task.status, newStatus)) {
+    throw new AppError("Invalid status transition", 400);
+  }
+
+  // 7. permission
+  if (member.role === "MEMBER") {
+    if (task.assigneeId !== currentUser.id) {
+      throw new AppError("Permission denied", 403);
+    }
+  }
+
+  // 8. update
+  return prisma.task.update({
+    where: { id: taskId },
+    data: {
+      status: newStatus,
     },
   });
 };

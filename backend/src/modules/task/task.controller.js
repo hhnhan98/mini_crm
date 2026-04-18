@@ -58,3 +58,20 @@ export const deleteTask = async (req, res) => {
     return handleError(res, err);
   }
 };
+
+export const updateStatus = async (req, res) => {
+  try {
+    const task = await taskService.updateTaskStatus({
+      taskId: req.params.id,
+      newStatus: req.body.status,
+      currentUser: req.user,
+    });
+
+    return res.json({
+      message: "status updated",
+      data: task,
+    });
+  } catch (err) {
+    return handleError(res, err);
+  }
+};
