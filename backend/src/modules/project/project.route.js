@@ -6,16 +6,17 @@ import { checkProjectAccess } from "../../middlewares/checkProjectAccess.js";
 
 const router = express.Router();
 
+router.use(verifyToken);
+
 // GET MY PROJECTS
-router.get("/", verifyToken, projectController.getMyProjects);
+router.get("/", projectController.getMyProjects);
 
 // CREATE PROJECT
-router.post("/", verifyToken, projectController.createProject);
+router.post("/", projectController.createProject);
 
 // GET MEMBERS
 router.get(
   "/:projectId/members",
-  verifyToken,
   checkProjectAccess,
   checkProjectRole(["OWNER"]),
   projectController.getMembers
@@ -24,7 +25,6 @@ router.get(
 // ADD MEMBER
 router.post(
   "/:projectId/members",
-  verifyToken,
   checkProjectAccess,
   checkProjectRole(["OWNER"]),
   projectController.addMember
@@ -33,7 +33,6 @@ router.post(
 // GET PROJECT DETAIL
 router.get(
   "/:projectId",
-  verifyToken,
   checkProjectAccess,
   checkProjectRole(["OWNER", "MEMBER"]),
   projectController.getProjectDetail
