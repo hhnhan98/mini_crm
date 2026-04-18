@@ -62,7 +62,7 @@ export const deleteTask = async (req, res) => {
 export const updateStatus = async (req, res) => {
   try {
     const task = await taskService.updateTaskStatus({
-      taskId: req.params.id,
+      taskId: req.params.taskId,
       newStatus: req.body.status,
       currentUser: req.user,
     });
